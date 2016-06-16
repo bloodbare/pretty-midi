@@ -19,6 +19,24 @@ from .utilities import qpm_to_bpm
 # The largest we'd ever expect a tick to be
 MAX_TICK = 1e7
 
+def cmp_to_key(mycmp):
+    'Convert a cmp= function into a key= function'
+    class K(object):
+        def __init__(self, obj, *args):
+            self.obj = obj
+        def __lt__(self, other):
+            return mycmp(self.obj, other.obj) < 0
+        def __gt__(self, other):
+            return mycmp(self.obj, other.obj) > 0
+        def __eq__(self, other):
+            return mycmp(self.obj, other.obj) == 0
+        def __le__(self, other):
+            return mycmp(self.obj, other.obj) <= 0
+        def __ge__(self, other):
+            return mycmp(self.obj, other.obj) >= 0
+        def __ne__(self, other):
+            return mycmp(self.obj, other.obj) != 0
+    return K
 
 class PrettyMIDI(object):
     """A container for MIDI data in an easily-manipulable format.
@@ -1003,7 +1021,7 @@ class PrettyMIDI(object):
         tracks += [timing_track]
         # Create a list of possible channels to assign - this seems to matter
         # for some synths.
-        channels = range(16)
+        channels = list(range(16))
         # Don't assign the drum channel by mistake!
         channels.remove(9)
         for n, instrument in enumerate(self.instruments):
@@ -1050,7 +1068,7 @@ class PrettyMIDI(object):
                 control_event.channel = channel
                 track += [control_event]
             # Sort all the events using the event_compare comparator.
-            sorted_track = sorted(track, cmp=event_compare)
+            sorted_track = sorted(track, key=cmp_to_key(event_compare))
             track = midi.Track(sorted_track, tick_relative=False)
 
             # If there's a note off event and a note on event with the same
